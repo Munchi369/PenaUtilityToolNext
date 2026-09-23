@@ -1,0 +1,51 @@
+# Gradle / Kotlin
+.gradle/
+# Codex-local Gradle cache used when the shared user cache is not writable
+.gradle-codex/
+.kotlin/
+build/
+out/
+app/bin/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code / Cursor local workspace state
+.vscode/
+*.code-workspace
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+local.properties
+/config/
+
+# Local Derby databases used for development and tests
+/test-data/**
+!/test-data/README.md
+
+# JVM diagnostics and logs
+*.log
+hs_err_pid*
+replay_pid*
+
+# Archives
+*.zip
+
+# Reference and design images
+*.png
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+
+# Independent Git repository used only for the public GitHub copy
+/.public-repo/
