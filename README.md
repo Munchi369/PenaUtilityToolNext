@@ -20,7 +20,15 @@ Windowsでは、リポジトリのルートで次を実行します。
 .\gradlew.bat build
 ```
 
-一部のDBテストはローカルのテストデータがある場合だけ実行されます。ゲーム本体、セーブデータ、開発用の内部資料は、この公開リポジトリに含まれません。
+一部のDBテストはテストデータがある場合だけ実行されます。テストデータなしでもビルドできますが、DBを使うテストはスキップされます。
+
+DBテストも実行する場合は、GitHubの[Releases](https://github.com/Munchi369/PenaUtilityToolNext/releases)から`PenaUtilityToolNext-test-data-year05.zip`をダウンロードし、リポジトリのルートへ展開してください。配置後に次のファイルが存在すれば準備完了です。
+
+```text
+test-data/reference/year-05/penanto3-year05-end/service.properties
+```
+
+その後、もう一度`.\gradlew.bat check`を実行します。ゲーム本体、通常利用のセーブデータ、開発用の内部資料は、この公開リポジトリに含まれません。
 
 ## ライセンス
 
