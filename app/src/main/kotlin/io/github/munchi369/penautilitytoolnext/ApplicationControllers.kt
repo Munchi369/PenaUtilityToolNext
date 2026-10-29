@@ -16,6 +16,7 @@ import io.github.munchi369.penautilitytoolnext.savedata.ApplicationEnvironmentLo
 import io.github.munchi369.penautilitytoolnext.savedata.DerbySaveDatabaseAccess
 import io.github.munchi369.penautilitytoolnext.savedata.DerbySaveDatabaseProbe
 import io.github.munchi369.penautilitytoolnext.savedata.LatestSaveDatabaseBackup
+import io.github.munchi369.penautilitytoolnext.savedata.OptionalSaveDatabaseBackup
 import io.github.munchi369.penautilitytoolnext.savedata.PropertiesSaveDatabaseSettingsStore
 import io.github.munchi369.penautilitytoolnext.savedata.SaveDataController
 import io.github.munchi369.penautilitytoolnext.savedata.SaveDatabasePathResolver
@@ -85,9 +86,10 @@ class ApplicationControllers private constructor(
                     PlayerDetailSettingsStore(environment.playerDetailSettingsFile),
                     rosterController = playerRosterController,
                 )
+            val databaseSettingsStore = PropertiesSaveDatabaseSettingsStore(environment.settingsFile)
             val saveDataController =
                 SaveDataController(
-                    settingsStore = PropertiesSaveDatabaseSettingsStore(environment.settingsFile),
+                    settingsStore = databaseSettingsStore,
                     pathResolver =
                         SaveDatabasePathResolver(
                             applicationDirectory = environment.applicationDirectory,
@@ -105,7 +107,11 @@ class ApplicationControllers private constructor(
             val lineupController =
                 LineupController(
                     loader = DerbyLineupLoader(databaseAccess),
-                    saver = DerbyLineupWriter(databaseAccess, LatestSaveDatabaseBackup(environment.latestBackupDirectory)),
+                    saver =
+                        DerbyLineupWriter(
+                            databaseAccess,
+                            OptionalSaveDatabaseBackup(databaseSettingsStore, LatestSaveDatabaseBackup(environment.latestBackupDirectory)),
+                        ),
                     pinStore = JsonLineupPinStore(environment.lineupPinsFile),
                     backgroundExecutor = worker,
                     uiExecutor = uiExecutor,

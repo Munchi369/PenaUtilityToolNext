@@ -35,6 +35,11 @@ set APP_HOME=%DIRNAME%
 @rem Resolve any "." and ".." in APP_HOME to make it shorter.
 for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 
+@rem Windows packaged app hosts can reject AF_UNIX connect in Java NIO.
+@rem A file (not a directory) makes the JDK use its TCP loopback fallback.
+@rem Keep this local to the wrapper and inherit it in Gradle/Kotlin/test JVMs.
+set JAVA_TOOL_OPTIONS=%JAVA_TOOL_OPTIONS% "-Djdk.net.unixdomain.tmpdir=%APP_HOME%\gradle\wrapper\gradle-wrapper.properties"
+
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 

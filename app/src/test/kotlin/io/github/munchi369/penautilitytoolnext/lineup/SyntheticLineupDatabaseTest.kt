@@ -6,9 +6,14 @@ import io.github.munchi369.penautilitytoolnext.game.PlayerSquad
 import io.github.munchi369.penautilitytoolnext.lineup.SyntheticLineupDatabase.OTHER_TEAM_PLAYER
 import io.github.munchi369.penautilitytoolnext.savedata.CopiedDerbyTestDatabase
 import io.github.munchi369.penautilitytoolnext.savedata.DerbySaveDatabaseAccess
+import io.github.munchi369.penautilitytoolnext.savedata.OptionalSaveDatabaseBackup
+import io.github.munchi369.penautilitytoolnext.savedata.PropertiesSaveDatabaseSettingsStore
+import io.github.munchi369.penautilitytoolnext.savedata.SaveDatabaseSettings
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.sql.Connection
@@ -18,6 +23,32 @@ import java.sql.SQLException
 /** Lineup saving against a synthetic Derby DB, so the only game-DB writer is covered without the Reference DB. */
 class SyntheticLineupDatabaseTest {
     private val access = DerbySaveDatabaseAccess()
+
+    @Test
+    fun savingWithoutBackupCommitsAndEnablingBackupStopsSavingIfCopyFails(
+        @TempDir root: Path,
+    ) {
+        SyntheticLineupDatabase.create().use { database ->
+            val store = PropertiesSaveDatabaseSettingsStore(root.resolve("settings.properties"))
+            var backups = 0
+            val backup =
+                OptionalSaveDatabaseBackup(store) {
+                    backups++
+                    throw IOException("copy failed")
+                }
+            val snapshot = load(database.path)
+            val draft = LineupEditing(snapshot).swapLineup(snapshot.initial, LineupMode.DH, 0, 1)
+            assertEquals(LineupSaveResult.Saved, DerbyLineupWriter(access, backup).save(snapshot, draft))
+            assertEquals(0, backups)
+            val reloaded = load(database.path)
+            assertEquals(draft.dh, reloaded.initial.dh)
+            store.save(SaveDatabaseSettings(null, backupEnabled = true))
+            val changed = LineupEditing(reloaded).swapLineup(reloaded.initial, LineupMode.DH, 0, 1)
+            assertTrue(DerbyLineupWriter(access, backup).save(reloaded, changed) is LineupSaveResult.BackupFailed)
+            assertEquals(1, backups)
+            assertEquals(reloaded.initial.dh, load(database.path).initial.dh)
+        }
+    }
 
     @Test
     fun committedLineupIsReportedAsSavedWithWarningWhenShutdownFails() {

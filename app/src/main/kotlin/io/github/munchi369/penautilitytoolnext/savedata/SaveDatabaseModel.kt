@@ -35,6 +35,7 @@ sealed interface SaveDatabasePathResolution {
 
 data class SaveDatabaseSettings(
     val selectedPath: Path?,
+    val backupEnabled: Boolean = false,
 )
 
 sealed interface SaveDatabaseSettingsLoadResult {

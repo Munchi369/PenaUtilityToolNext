@@ -16,6 +16,47 @@ class SaveDataControllerTest {
     private val fixedInstant = Instant.parse("2026-08-30T12:34:56Z")
 
     @Test
+    fun backupPreferenceSurvivesPathChangesAndRestartAndResetsToOff(
+        @TempDir root: Path,
+    ) {
+        val store = FakeSettingsStore(root.resolve("config/settings.properties"))
+        val controller = controller(root, store, probe = { SaveDatabaseProbeResult.Available })
+        controller.start()
+        assertFalse(controller.backupEnabled)
+        controller.updateBackupEnabled(true)
+        assertTrue(controller.backupEnabled)
+        controller.choose(root.resolve("selected"))
+        assertTrue(store.settings.backupEnabled)
+        controller.returnToAutomaticSelection()
+        assertTrue(store.settings.backupEnabled)
+        assertEquals(null, store.settings.selectedPath)
+        val restarted = this.controller(root, store, probe = { SaveDatabaseProbeResult.Available })
+        restarted.start()
+        assertTrue(restarted.backupEnabled)
+        store.loadResult = SaveDatabaseSettingsLoadResult.Invalid("broken")
+        restarted.start()
+        restarted.resetSettings()
+        assertFalse(restarted.backupEnabled)
+    }
+
+    @Test
+    fun backupPreferenceWriteFailureKeepsThePreviousValueAndSelectedDatabase(
+        @TempDir root: Path,
+    ) {
+        val store = FakeSettingsStore(root.resolve("config/settings.properties"))
+        val controller = controller(root, store, probe = { SaveDatabaseProbeResult.Available })
+        controller.start()
+        val before = controller.state
+        store.failWrites = true
+        controller.updateBackupEnabled(true)
+        assertFalse(controller.backupEnabled)
+        assertFalse(controller.backupSettingsSaving)
+        assertTrue(controller.backupSettingsError != null)
+        assertEquals(before, controller.state)
+        assertFalse(store.settings.backupEnabled)
+    }
+
+    @Test
     fun startupResolvesAndChecksDevelopmentDatabase(
         @TempDir root: Path,
     ) {
@@ -187,10 +228,12 @@ private class FakeSettingsStore(
 ) : SaveDatabaseSettingsStore {
     var settings = SaveDatabaseSettings(selectedPath = null)
     var loadResult: SaveDatabaseSettingsLoadResult = SaveDatabaseSettingsLoadResult.Loaded(settings)
+    var failWrites = false
 
     override fun load(): SaveDatabaseSettingsLoadResult = loadResult
 
     override fun save(settings: SaveDatabaseSettings) {
+        if (failWrites) throw SaveDatabaseSettingsWriteException("write failed", IllegalStateException("blocked"))
         this.settings = settings
         loadResult = SaveDatabaseSettingsLoadResult.Loaded(settings)
     }

@@ -496,10 +496,18 @@ class HomeTest {
                 assertEquals(4, controller.month)
                 assertNull(controller.selectedDay)
                 assertFalse(controller.showingMatch)
-                click(140f)
+
+                fun descendants(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::descendants)
+
+                val playerNode =
+                    scene.semanticsOwners.flatMap { descendants(it.rootSemanticsNode) }.first { node ->
+                        node.config.getOrNull(SemanticsProperties.Text)?.any { it.text.startsWith(data.playerName(11)) } == true
+                    }
+                val playerBounds = playerNode.boundsInRoot
+                click(playerBounds.center.y, playerBounds.center.x)
                 assertEquals(11, openedPlayer)
                 assertNull(controller.selectedDay)
-                click(140f, 20f)
+                click(playerBounds.center.y, 20f)
                 assertEquals(4, controller.month)
                 assertEquals(89, controller.selectedDay)
                 assertFalse(controller.showingMatch)

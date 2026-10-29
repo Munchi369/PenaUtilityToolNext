@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -70,6 +71,23 @@ fun SaveDataScreen(controller: SaveDataController) {
             onReturnToAutomatic = controller::returnToAutomaticSelection,
             onResetSettings = controller::resetSettings,
         )
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = controller.backupEnabled,
+                    onCheckedChange = controller::updateBackupEnabled,
+                    enabled = !state.isBusy && state.phase != SaveDataPhase.SETTINGS_ERROR && !controller.backupSettingsSaving,
+                )
+                Text("セーブデータを書き換える前にバックアップする")
+            }
+            Text(
+                "起用などの変更を保存するとき、変更前のセーブデータを1世代分残します。",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            controller.backupSettingsError?.let { TechnicalDetails(it) }
+        }
 
         Text(
             text = "バージョン $APP_VERSION",

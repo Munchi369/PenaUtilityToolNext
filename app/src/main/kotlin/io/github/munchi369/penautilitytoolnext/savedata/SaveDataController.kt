@@ -16,6 +16,35 @@ class SaveDataController(
     private val clock: Clock = Clock.systemDefaultZone(),
     private val onSettingsReset: () -> Unit = {},
 ) {
+    private var settings = SaveDatabaseSettings(selectedPath = null)
+
+    var backupEnabled by mutableStateOf(false)
+        private set
+
+    var backupSettingsSaving by mutableStateOf(false)
+        private set
+
+    var backupSettingsError by mutableStateOf<String?>(null)
+        private set
+
+    fun updateBackupEnabled(enabled: Boolean) {
+        if (state.isBusy || state.phase == SaveDataPhase.SETTINGS_ERROR || backupSettingsSaving) return
+        backupSettingsSaving = true
+        backupSettingsError = null
+        inBackground(state.target, state.hasSavedSelection) {
+            try {
+                val updated = settings.copy(backupEnabled = enabled)
+                settingsStore.save(updated)
+                settings = updated
+                uiExecutor.execute { backupEnabled = enabled }
+            } catch (error: SaveDatabaseSettingsWriteException) {
+                uiExecutor.execute { backupSettingsError = error.toTechnicalDetails("バックアップ設定を保存できません") }
+            } finally {
+                uiExecutor.execute { backupSettingsSaving = false }
+            }
+        }
+    }
+
     var state by mutableStateOf(
         SaveDataViewState(
             phase = SaveDataPhase.LOADING,
@@ -55,7 +84,9 @@ class SaveDataController(
 
         inBackground(target, hasSavedSelection = true) {
             try {
-                settingsStore.save(SaveDatabaseSettings(selectedPath = target.path))
+                val updated = settings.copy(selectedPath = target.path)
+                settingsStore.save(updated)
+                settings = updated
                 probe(target, hasSavedSelection = true)
             } catch (error: SaveDatabaseSettingsWriteException) {
                 postSettingsSaveError(
@@ -87,9 +118,9 @@ class SaveDataController(
             )
         inBackground(previousState.target, previousState.hasSavedSelection) {
             try {
-                val settings = SaveDatabaseSettings(selectedPath = null)
-                settingsStore.save(settings)
-                resolveAndProbe(settings)
+                val updated = settings.copy(selectedPath = null)
+                settingsStore.save(updated)
+                resolveAndProbe(updated)
             } catch (error: SaveDatabaseSettingsWriteException) {
                 postSettingsSaveError(
                     target = previousState.target,
@@ -125,6 +156,8 @@ class SaveDataController(
     }
 
     private fun resolveAndProbe(settings: SaveDatabaseSettings) {
+        this.settings = settings
+        uiExecutor.execute { backupEnabled = settings.backupEnabled }
         when (val resolution = pathResolver.resolve(settings.selectedPath)) {
             is SaveDatabasePathResolution.Found -> {
                 val hasSavedSelection = settings.selectedPath != null

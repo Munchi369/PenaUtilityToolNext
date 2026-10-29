@@ -12,6 +12,18 @@ fun interface SaveDatabaseBackup {
     fun backup(database: Path)
 }
 
+class OptionalSaveDatabaseBackup(
+    private val settingsStore: SaveDatabaseSettingsStore,
+    private val delegate: SaveDatabaseBackup,
+) : SaveDatabaseBackup {
+    override fun backup(database: Path) {
+        when (val result = settingsStore.load()) {
+            is SaveDatabaseSettingsLoadResult.Invalid -> throw IOException(result.technicalDetails)
+            is SaveDatabaseSettingsLoadResult.Loaded -> if (result.settings.backupEnabled) delegate.backup(database)
+        }
+    }
+}
+
 /** Keeps only the latest copy; the previous copy is removed only after the new copy is complete. */
 class LatestSaveDatabaseBackup internal constructor(
     private val backupDirectory: Path,

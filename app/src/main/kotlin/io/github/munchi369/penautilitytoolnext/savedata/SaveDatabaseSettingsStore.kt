@@ -54,6 +54,7 @@ class PropertiesSaveDatabaseSettingsStore(
             val properties =
                 Properties().apply {
                     setProperty(SCHEMA_VERSION_KEY, CURRENT_SCHEMA_VERSION)
+                    setProperty(BACKUP_ENABLED_KEY, settings.backupEnabled.toString())
                     settings.selectedPath?.let {
                         setProperty(SELECTED_PATH_KEY, it.toAbsolutePath().normalize().toString())
                     }
@@ -79,7 +80,10 @@ class PropertiesSaveDatabaseSettingsStore(
                 )
             }
             SaveDatabaseSettingsLoadResult.Loaded(
-                SaveDatabaseSettings(selectedPath = parsedPath?.normalize()),
+                SaveDatabaseSettings(
+                    selectedPath = parsedPath?.normalize(),
+                    backupEnabled = properties.getProperty(BACKUP_ENABLED_KEY)?.toBooleanStrictOrNull() ?: false,
+                ),
             )
         } catch (error: RuntimeException) {
             SaveDatabaseSettingsLoadResult.Invalid(
@@ -92,6 +96,7 @@ class PropertiesSaveDatabaseSettingsStore(
         const val CURRENT_SCHEMA_VERSION = "1"
         const val SCHEMA_VERSION_KEY = "schemaVersion"
         const val SELECTED_PATH_KEY = "selectedPath"
+        const val BACKUP_ENABLED_KEY = "backupEnabled"
     }
 }
 

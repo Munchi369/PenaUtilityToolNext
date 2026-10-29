@@ -22,7 +22,24 @@ class SaveDatabaseSettingsStoreTest {
         val result = store.load() as SaveDatabaseSettingsLoadResult.Loaded
 
         assertEquals(null, result.settings.selectedPath)
+        assertFalse(result.settings.backupEnabled)
         assertFalse(Files.exists(settingsFile))
+    }
+
+    @Test
+    fun backupPreferenceDefaultsOffForOldSettingsAndRoundTrips(
+        @TempDir root: Path,
+    ) {
+        val file = root.resolve("settings.properties")
+        Files.writeString(file, "schemaVersion=1\n")
+        val store = PropertiesSaveDatabaseSettingsStore(file)
+        assertFalse((store.load() as SaveDatabaseSettingsLoadResult.Loaded).settings.backupEnabled)
+        for (enabled in listOf(true, false)) {
+            store.save(SaveDatabaseSettings(root.resolve("selected"), backupEnabled = enabled))
+            val loaded = (store.load() as SaveDatabaseSettingsLoadResult.Loaded).settings
+            assertEquals(enabled, loaded.backupEnabled)
+            assertEquals(root.resolve("selected"), loaded.selectedPath)
+        }
     }
 
     @Test

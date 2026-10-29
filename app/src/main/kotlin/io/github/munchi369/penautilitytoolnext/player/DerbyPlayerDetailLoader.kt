@@ -108,7 +108,8 @@ class DerbyPlayerDetailLoader(
             contextErrors = listOfNotNull(season.error, start.error),
             teamNames =
                 detailSection {
-                    connection.detailRows("SELECT TEAMNO, TEAMNAME FROM TEAM_INFO")
+                    connection
+                        .detailRows("SELECT TEAMNO, TEAMNAME FROM TEAM_INFO")
                         .associate { it.int("TEAMNO") to it.text("TEAMNAME") }
                 },
         )
