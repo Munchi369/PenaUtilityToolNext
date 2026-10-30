@@ -210,7 +210,13 @@ fun App(controllers: ApplicationControllers) {
                                                 val path = playerRosterState.targetPath
                                                 val roster = playerRosterState.roster
                                                 if (path != null && roster != null) {
-                                                    controllers.playerDetail.open(path, player, roster, controllers.playerRoster.options)
+                                                    controllers.playerDetail.open(
+                                                        path,
+                                                        player,
+                                                        roster,
+                                                        controllers.playerRoster.options,
+                                                        selectPitchingByPosition = true,
+                                                    )
                                                     detailReturnDestination = AppDestination.HOME
                                                     destination = AppDestination.PLAYERS
                                                 }

@@ -344,6 +344,27 @@ class PlayerDetailTest {
     }
 
     @Test
+    fun homeOpenSelectsPitchingFromMainPosition() {
+        val pitcher = player(1)
+        val fielder = player(2).copy(position = PlayerPosition.CATCHER)
+        val roster = PlayerRoster(listOf(pitcher, fielder), emptyList())
+        val batting = PlayerRosterOptions(display = RosterDisplay.BATTING_STATS)
+        val controller =
+            PlayerDetailController(
+                PlayerDetailLoader { _, _ -> PlayerDetailLoadResult.Failed("", "") },
+                Executor { it.run() },
+                Executor { it.run() },
+            )
+        controller.open(temporary, pitcher, roster, batting, selectPitchingByPosition = true)
+        assertEquals(PlayerDetailTab.STATS, controller.options.tab)
+        assertTrue(controller.options.pitching)
+        controller.open(temporary, fielder, roster, batting, selectPitchingByPosition = true)
+        assertFalse(controller.options.pitching)
+        controller.open(temporary, pitcher, roster, batting)
+        assertFalse(controller.options.pitching)
+    }
+
+    @Test
     fun abilityColumnsFollowMainPositionAndChartLabelsUseTheYear() {
         val pitcher = detailAbilityColumns("投手").map { it.key }
         val fielder = detailAbilityColumns("捕手").map { it.key }

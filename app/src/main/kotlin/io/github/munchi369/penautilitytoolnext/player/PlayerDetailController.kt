@@ -91,16 +91,21 @@ class PlayerDetailController(
         player: PlayerRosterPlayer,
         roster: PlayerRoster,
         rosterOptions: PlayerRosterOptions,
+        selectPitchingByPosition: Boolean = false,
     ) {
         this.path = path
         standaloneRosterOptions = rosterOptions
         players = detailNavigationPlayers(roster, rosterOptions)
         teamColors = roster.teamColors
         val pitching =
-            when (rosterOptions.display) {
-                RosterDisplay.PITCHING_ABILITY, RosterDisplay.PITCHING_STATS -> true
-                RosterDisplay.BATTING_ABILITY, RosterDisplay.BATTING_STATS -> false
-                RosterDisplay.BASIC -> player.position == PlayerPosition.PITCHER
+            if (selectPitchingByPosition) {
+                player.position == PlayerPosition.PITCHER
+            } else {
+                when (rosterOptions.display) {
+                    RosterDisplay.PITCHING_ABILITY, RosterDisplay.PITCHING_STATS -> true
+                    RosterDisplay.BATTING_ABILITY, RosterDisplay.BATTING_STATS -> false
+                    RosterDisplay.BASIC -> player.position == PlayerPosition.PITCHER
+                }
             }
         options =
             PlayerDetailOptions(
